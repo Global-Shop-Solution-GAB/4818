@@ -1,0 +1,102 @@
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'BN Dec 7, 2017
+'The program will fire when user click Process button on screen OLS003 (On Line System > Transactions > Shop Floor Data Collection (GUI). On the Labor sequence, input Good/Scrap then click Process)
+
+'If this is the last Labor sequence of the Job (less than  Seq 990000), it will auto open the WIP to Finished Good screen JBS0052M.
+
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+v.Local..BulkDeclareString(sSeq,sError,sHold,sSQL,sRet,sParams)
+
+F.odbc.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass,600)
+f.Intrinsic.Control.If(v.Caller.Hook,=,15890)
+	'Check close flag = 'Y'
+	f.Intrinsic.Control.If(Variable.Passed.000003,=,"Y")
+		f.Intrinsic.String.Split(Variable.Passed.000004,"-",v.Local.sHold)
+		f.Intrinsic.String.LPad(Variable.Passed.000005,"0",6,v.Local.sSeq)
+		'Check if this is the last Labor Sequence
+		f.Intrinsic.String.Build("select Max(seq) from Job_operations where job = '{0}' and suffix = '{1}'  and LMO = 'L' and seq < '990000'",v.Local.sHold(0),v.Local.sHold(1),v.Local.sSQL)
+		f.ODBC.Connection!con.ExecuteAndReturn(v.Local.sSQL,v.Local.sRet)
+		f.Intrinsic.Control.If(v.Local.sRet,=,v.Local.sSeq)
+			f.Intrinsic.String.Build("{0}!*!{1}!*!{2}!*!{3}!*!{4}!*!{5}!*!{6}!*!{7}!*!{8}!*!{9}!*!{10}!*!{11}!*!{12}!*!{13}!*!{14}!*!{15}!*!{16}!*!{17}!*!{18}!*!{19}!*!{20}!*!{21}!*!{22}!*!{23}!*!{24}",v.Caller.CompanyCode,v.Caller.Terminal,"","WS","","","","","","",v.Local.sHold(0),v.Local.sHold(1),"","","","","","","","","","","","","",v.Local.sParams)
+			Function.Global.General.CallWrapperAsync(2003,v.Local.sParams)
+		f.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf		
+f.Intrinsic.Control.EndIf
+f.ODBC.Connection!con.Close
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4818_Auto_Open_WIP.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+'Parameters: 
+'0 CMPNY
+'1 TRMNL
+'2 CALLING-PGM
+'3 MODE
+'"NS": screenless mode
+'4 PASS-DTL-JOB^
+'5 PASS-DTL-SUFFIX^
+'6 PASS-DTL-SEQ^
+'7 PASS-DTL-FILL^
+'8PASS-DTL-DATE^
+'9 PASS-DTL-KEY-SEQ^
+'10 WO*
+'11 WO-SUFFIX*
+'12 TRANSFER-DATE-YEAR*#
+'13TRANSFER-DATE-MONTH*#
+'14 TRANSFER-DATE-DAY*#
+'15 CLOSE-WORK-ORDER-FLAG*
+'"Y": Close work order
+'"N": Do not close work order
+'16 PART-DESC*#
+'17 QUANTITY*
+'18 COST*
+'19 PRICE*
+'20 PRINT-LABELS-FLAG*
+'"Y": Print labels
+'"N": Do not print labels
+'21 COST-METHOD*
+'"E": Estimate
+'"P": Percentage
+'"I": Inventory
+'"L": Alt Cost
+'"A": Actual
+'"R": Remaining
+'"U": Entered
+'22 UPDATE-INVENTORY-FLAG*
+'"Y": Update inventory
+'"N": Do not update inventory
+'23 INVENTORY-DEBIT-ACCOUNT*
+'24 FILENAME*
+'A fully qualified path to a tab delimited file (each column separated by a tab, each row separated by a new line). 
+'Each row should have the following columns:
+'Lot
+'Bin
+'Heat
+'Serial
+'Quantity
+'Expiration Date
+'Warranty Months
+'User Field 1
+'User Field 2
+'User Field 3
+'User Field 4
+'User Field 5
+'User Field 6
+'User Field 7
+'User Field 8
+'User Field 9
+
+Program.Sub.Main.End
+
+Program.Sub.Comments.Start
+${$0$}$$}$$}$12/7/2017 1:04:03 PM$}$False
+Program.Sub.Comments.End
